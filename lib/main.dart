@@ -67,43 +67,17 @@ class PortfolioItem {
   });
 }
 
-// Здесь будут отображаться 4–5 проектов в сетке смартфона.
-// repositoryUrl заполним, когда будут известны ссылки на репозитории.
+// Пока в портфолио добавлен один подтверждённый проект.
 const items = <PortfolioItem>[
   PortfolioItem(
-    'Android Weather',
+    'Weather Forecast App',
     'Kotlin · Android',
     Icons.cloud_rounded,
     Color(0xFF4F83CC),
-    'Приложение погоды для Android. Здесь будет краткое описание возможностей, архитектуры и использованных технологий.',
-  ),
-  PortfolioItem(
-    'Portfolio Website',
-    'Flutter · Web',
-    Icons.language_rounded,
-    Color(0xFFB58AE8),
-    'Интерактивное портфолио в стиле Android Launcher, созданное с помощью Flutter Web.',
-  ),
-  PortfolioItem(
-    'Project 03',
-    'Application',
-    Icons.widgets_rounded,
-    Color(0xFF48B9A7),
-    'Описание проекта добавим позже: назначение, основные функции и использованные технологии.',
-  ),
-  PortfolioItem(
-    'Project 04',
-    'Development',
-    Icons.code_rounded,
-    Color(0xFFE0A45B),
-    'Описание проекта добавим позже: задача, реализация и основные технические решения.',
-  ),
-  PortfolioItem(
-    'Project 05',
-    'More work',
-    Icons.apps_rounded,
-    Color(0xFFD47F9D),
-    'Дополнительный проект. Его можно будет убрать, если для портфолио будет достаточно четырёх приложений.',
+    'Мобильное приложение для Android, которое получает данные о погоде через API. '
+        'Пользователь может просматривать погоду на ближайшие три часа и настраивать виджет приложения. '
+        'Проект создан на Kotlin.',
+    repositoryUrl: 'https://github.com/02493/weather-forecast-app',
   ),
 ];
 
