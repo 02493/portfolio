@@ -67,7 +67,7 @@ class PortfolioItem {
   });
 }
 
-// Пока в портфолио добавлен один подтверждённый проект.
+// Список проектов портфолио
 const items = <PortfolioItem>[
   PortfolioItem(
     'Weather Forecast App',
@@ -78,6 +78,15 @@ const items = <PortfolioItem>[
         'Пользователь может просматривать погоду на ближайшие три часа и настраивать виджет приложения. '
         'Проект создан на Kotlin.',
     repositoryUrl: 'https://github.com/02493/weather-forecast-app',
+  ),
+  PortfolioItem(
+    'Ujin Hackathon',
+    'Flutter · Team Project',
+    Icons.hub_rounded,
+    Color(0xFF6C5CE7),
+    'Командный проект, разработанный в рамках хакатона Ujin. '
+        'Решение ориентировано на автоматизацию сервисов, интеграцию компонентов умного дома и взаимодействие с платформой Ujin.',
+    repositoryUrl: 'https://github.com/02493/ujin-hackathon-team/',
   ),
 ];
 
@@ -297,21 +306,24 @@ class _AmbientBackground extends StatelessWidget {
           top: 170,
           child: _GlowCircle(
               size: 250,
-              color: isLight ? Color(0xFF9DADEB) : Color(0xFF3730A3)),
+              color:
+                  isLight ? const Color(0xFF9DADEB) : const Color(0xFF3730A3)),
         ),
         Positioned(
           right: -80,
           bottom: 100,
           child: _GlowCircle(
               size: 300,
-              color: isLight ? Color(0xFFB9A8E8) : Color(0xFF4C1D95)),
+              color:
+                  isLight ? const Color(0xFFB9A8E8) : const Color(0xFF4C1D95)),
         ),
         Positioned(
           right: 360,
           top: -130,
           child: _GlowCircle(
               size: 260,
-              color: isLight ? Color(0xFFB6C4E9) : Color(0xFF312E81)),
+              color:
+                  isLight ? const Color(0xFFB6C4E9) : const Color(0xFF312E81)),
         ),
       ],
     );
@@ -669,21 +681,24 @@ class _NowPlayingCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('♫  NOW PLAYING',
+                      const Text('♫  NOW PLAYING',
                           style: TextStyle(
                               color: Color(0xFF8B91FF),
                               fontSize: 9,
                               fontWeight: FontWeight.w700)),
-                      SizedBox(height: 3),
+                      const SizedBox(height: 3),
                       Text('Andrey Tokarev',
                           style: TextStyle(
-                              color: isLight ? Color(0xFF252A36) : Colors.white,
+                              color: isLight
+                                  ? const Color(0xFF252A36)
+                                  : Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w700)),
                       Text('Portfolio · Digital space',
                           style: TextStyle(
-                              color:
-                                  isLight ? Color(0xFF72798A) : Colors.white54,
+                              color: isLight
+                                  ? const Color(0xFF72798A)
+                                  : Colors.white54,
                               fontSize: 9)),
                     ],
                   ),
