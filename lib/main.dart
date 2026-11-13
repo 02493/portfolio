@@ -567,10 +567,9 @@ class _PhoneFrame extends StatelessWidget {
                     _PhoneDock(
                       isLight: isLight,
                       onGithub: onGithub,
-                      onLinkedIn: () =>
-                          _openExternal('https://www.linkedin.com/'),
+                      onTelegram: () => _openExternal('https://t.me/tec9shi'),
                       onToggleTheme: onToggleTheme,
-                      onEmail: () => _openExternal('mailto:'),
+                      onRuStore: () => _openExternal('https://www.rustore.ru/'),
                       onPlayStore: () =>
                           _openExternal('https://play.google.com/store'),
                     ),
@@ -801,17 +800,17 @@ class _PhoneApp extends StatelessWidget {
 class _PhoneDock extends StatelessWidget {
   final bool isLight;
   final VoidCallback onGithub;
-  final VoidCallback onLinkedIn;
+  final VoidCallback onTelegram;
   final VoidCallback onToggleTheme;
-  final VoidCallback onEmail;
+  final VoidCallback onRuStore;
   final VoidCallback onPlayStore;
 
   const _PhoneDock({
     required this.isLight,
     required this.onGithub,
-    required this.onLinkedIn,
+    required this.onTelegram,
     required this.onToggleTheme,
-    required this.onEmail,
+    required this.onRuStore,
     required this.onPlayStore,
   });
 
@@ -829,25 +828,40 @@ class _PhoneDock extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _DockIcon(
-                icon: Icons.code_rounded, onTap: onGithub, isLight: isLight),
+              icon: Icons.code_rounded,
+              assetPath: 'icon/github.png',
+              tooltip: 'GitHub',
+              onTap: onGithub,
+              isLight: isLight,
+            ),
             _DockIcon(
-                icon: Icons.work_outline_rounded,
-                onTap: onLinkedIn,
-                isLight: isLight),
+              icon: Icons.send_rounded,
+              assetPath: 'icon/telegram.png',
+              tooltip: 'Telegram',
+              onTap: onTelegram,
+              isLight: isLight,
+            ),
             _DockIcon(
               icon: isLight ? Icons.dark_mode_rounded : Icons.wb_sunny_rounded,
+              tooltip: 'Theme',
               onTap: onToggleTheme,
               isLight: isLight,
               highlighted: true,
             ),
             _DockIcon(
-                icon: Icons.mail_outline_rounded,
-                onTap: onEmail,
-                isLight: isLight),
+              icon: Icons.store_rounded,
+              assetPath: 'icon/rustore.png',
+              tooltip: 'RuStore',
+              onTap: onRuStore,
+              isLight: isLight,
+            ),
             _DockIcon(
-                icon: Icons.play_arrow_rounded,
-                onTap: onPlayStore,
-                isLight: isLight),
+              icon: Icons.play_arrow_rounded,
+              assetPath: 'icon/googleplay.png',
+              tooltip: 'Google Play',
+              onTap: onPlayStore,
+              isLight: isLight,
+            ),
           ],
         ),
       );
@@ -855,14 +869,18 @@ class _PhoneDock extends StatelessWidget {
 
 class _DockIcon extends StatelessWidget {
   final IconData icon;
+  final String? assetPath;
+  final String tooltip;
   final VoidCallback onTap;
   final bool isLight;
   final bool highlighted;
 
   const _DockIcon({
     required this.icon,
+    required this.tooltip,
     required this.onTap,
     required this.isLight,
+    this.assetPath,
     this.highlighted = false,
   });
 
@@ -884,14 +902,31 @@ class _DockIcon extends StatelessWidget {
         child: IconButton(
           onPressed: onTap,
           padding: EdgeInsets.zero,
-          icon: Icon(
-            icon,
-            size: 21,
-            color: highlighted
-                ? Colors.white
-                : (isLight ? const Color(0xFF252936) : Colors.white70),
-          ),
-          tooltip: 'Open',
+          icon: assetPath != null
+              ? Padding(
+                  padding: const EdgeInsets.all(9),
+                  child: Image.asset(
+                    assetPath!,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(
+                      icon,
+                      size: 21,
+                      color: highlighted
+                          ? Colors.white
+                          : (isLight
+                              ? const Color(0xFF252936)
+                              : Colors.white70),
+                    ),
+                  ),
+                )
+              : Icon(
+                  icon,
+                  size: 21,
+                  color: highlighted
+                      ? Colors.white
+                      : (isLight ? const Color(0xFF252936) : Colors.white70),
+                ),
+          tooltip: tooltip,
         ),
       );
 }
