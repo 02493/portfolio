@@ -410,7 +410,7 @@ class _AboutPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Good to see you,',
+            Text('Привет! Меня зовут',
                 style: TextStyle(
                     color: Theme.of(context).brightness == Brightness.light
                         ? const Color(0xFF626A7B)
@@ -418,7 +418,7 @@ class _AboutPanel extends StatelessWidget {
                     fontSize: 14)),
             const SizedBox(height: 8),
             const Text(
-              'I am\nAndrey Tokarev.',
+              'Андрей Токарев',
               style: TextStyle(
                 fontSize: 34,
                 height: 1.05,
@@ -428,7 +428,7 @@ class _AboutPanel extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             Text(
-              'Welcome to my digital space. I am interested in mobile development, modern interfaces and building useful digital products. This portfolio is designed as an interactive smartphone launcher.',
+              'Я занимаюсь разработкой мобильных приложений, потому что мне интересно превращать идеи в реальные продукты, которыми люди пользуются каждый день. Я постоянно развиваюсь, изучаю новые инструменты и работаю над собственными проектами.\n\nМне нравится сочетать дизайн и функциональность, удобные интерфейсы. Каждый новый проект для меня возможность научиться чему-то новому и стать лучше в разработке.',
               style: TextStyle(
                   color: Theme.of(context).brightness == Brightness.light
                       ? const Color(0xFF626A7B)
