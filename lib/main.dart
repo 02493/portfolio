@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:simple_icons/simple_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void main() => runApp(const PortfolioApp());
@@ -297,57 +300,215 @@ class LauncherHome extends StatelessWidget {
   }
 }
 
-class _AmbientBackground extends StatelessWidget {
+class _AmbientBackground extends StatefulWidget {
   final bool isLight;
   const _AmbientBackground({required this.isLight});
 
   @override
+  State<_AmbientBackground> createState() => _AmbientBackgroundState();
+}
+
+class _AmbientBackgroundState extends State<_AmbientBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  static const _logos = <_FloatingLogoData>[
+    _FloatingLogoData(SimpleIcons.android,
+        column: 0, phase: 0.000000, direction: 1),
+    _FloatingLogoData(SimpleIcons.git,
+        column: 0, phase: 0.166667, direction: 1),
+    _FloatingLogoData(SimpleIcons.github,
+        column: 0, phase: 0.333333, direction: 1),
+    _FloatingLogoData(SimpleIcons.gitlab,
+        column: 0, phase: 0.500000, direction: 1),
+    _FloatingLogoData(SimpleIcons.apple,
+        column: 0, phase: 0.666667, direction: 1),
+    _FloatingLogoData(SimpleIcons.kotlin,
+        column: 0, phase: 0.833333, direction: 1),
+    _FloatingLogoData(SimpleIcons.android,
+        column: 1, phase: 0.110000, direction: -1),
+    _FloatingLogoData(SimpleIcons.git,
+        column: 1, phase: 0.276667, direction: -1),
+    _FloatingLogoData(SimpleIcons.github,
+        column: 1, phase: 0.443333, direction: -1),
+    _FloatingLogoData(SimpleIcons.gitlab,
+        column: 1, phase: 0.610000, direction: -1),
+    _FloatingLogoData(SimpleIcons.apple,
+        column: 1, phase: 0.776667, direction: -1),
+    _FloatingLogoData(SimpleIcons.kotlin,
+        column: 1, phase: 0.943333, direction: -1),
+    _FloatingLogoData(SimpleIcons.android,
+        column: 2, phase: 0.220000, direction: 1),
+    _FloatingLogoData(SimpleIcons.git,
+        column: 2, phase: 0.386667, direction: 1),
+    _FloatingLogoData(SimpleIcons.github,
+        column: 2, phase: 0.553333, direction: 1),
+    _FloatingLogoData(SimpleIcons.gitlab,
+        column: 2, phase: 0.720000, direction: 1),
+    _FloatingLogoData(SimpleIcons.apple,
+        column: 2, phase: 0.886667, direction: 1),
+    _FloatingLogoData(SimpleIcons.kotlin,
+        column: 2, phase: 0.053333, direction: 1),
+    _FloatingLogoData(SimpleIcons.android,
+        column: 3, phase: 0.330000, direction: -1),
+    _FloatingLogoData(SimpleIcons.git,
+        column: 3, phase: 0.496667, direction: -1),
+    _FloatingLogoData(SimpleIcons.github,
+        column: 3, phase: 0.663333, direction: -1),
+    _FloatingLogoData(SimpleIcons.gitlab,
+        column: 3, phase: 0.830000, direction: -1),
+    _FloatingLogoData(SimpleIcons.apple,
+        column: 3, phase: 0.996667, direction: -1),
+    _FloatingLogoData(SimpleIcons.kotlin,
+        column: 3, phase: 0.163333, direction: -1),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 42),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(0.45, -0.1),
-              radius: 1.25,
-              colors: isLight
-                  ? const [
-                      Color(0xFFE1E4F1),
-                      Color(0xFFF0F1F6),
-                      Color(0xFFE8EAF2)
-                    ]
-                  : const [Color(0xFF211743), Color(0xFF111020), ink],
-            ),
-          ),
-          child: const SizedBox.expand(),
-        ),
-        Positioned(
-          left: -80,
-          top: 170,
-          child: _GlowCircle(
-              size: 250,
-              color:
-                  isLight ? const Color(0xFF9DADEB) : const Color(0xFF3730A3)),
-        ),
-        Positioned(
-          right: -80,
-          bottom: 100,
-          child: _GlowCircle(
-              size: 300,
-              color:
-                  isLight ? const Color(0xFFB9A8E8) : const Color(0xFF4C1D95)),
-        ),
-        Positioned(
-          right: 360,
-          top: -130,
-          child: _GlowCircle(
-              size: 260,
-              color:
-                  isLight ? const Color(0xFFB6C4E9) : const Color(0xFF312E81)),
-        ),
-      ],
+    final isLight = widget.isLight;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+        final logoSize = width < 700 ? 46.0 : 76.0;
+
+        return AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(0.45, -0.1),
+                        radius: 1.25,
+                        colors: isLight
+                            ? const [
+                                Color(0xFFDCEBFA),
+                                Color(0xFFE9E5F7),
+                                Color(0xFFF0F1F6),
+                              ]
+                            : const [
+                                Color(0xFF252A35),
+                                Color(0xFF1A1D27),
+                                Color(0xFF111319),
+                              ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: -90,
+                  top: height * 0.18,
+                  child: _GlowCircle(
+                    size: 270,
+                    color: isLight
+                        ? const Color(0xFF91B8EE)
+                        : const Color(0xFF435A91),
+                  ),
+                ),
+                Positioned(
+                  right: -100,
+                  bottom: height * 0.10,
+                  child: _GlowCircle(
+                    size: 320,
+                    color: isLight
+                        ? const Color(0xFFB9A8E8)
+                        : const Color(0xFF55417F),
+                  ),
+                ),
+                Positioned(
+                  right: width * 0.28,
+                  top: -145,
+                  child: _GlowCircle(
+                    size: 270,
+                    color: isLight
+                        ? const Color(0xFFB4C8E8)
+                        : const Color(0xFF38466F),
+                  ),
+                ),
+                for (final logo in _logos)
+                  _buildFloatingLogo(
+                    logo,
+                    width: width,
+                    height: height,
+                    size: logoSize,
+                    progress: _controller.value,
+                    isLight: isLight,
+                  ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
+
+  Widget _buildFloatingLogo(
+    _FloatingLogoData logo, {
+    required double width,
+    required double height,
+    required double size,
+    required double progress,
+    required bool isLight,
+  }) {
+    // Все элементы проходят одинаковое расстояние за один цикл.
+    // phase задаёт только начальное положение, но не влияет на скорость.
+    final travel = (progress + logo.phase) % 1.0;
+    final trackLength = height + size * 2;
+    final top = logo.direction > 0
+        ? -size + travel * trackLength
+        : height + size - travel * trackLength;
+    final columnCenter = width * ((logo.column + 0.5) / 4);
+    final color = isLight
+        ? const Color(0xFF30394B).withOpacity(0.16)
+        : Colors.white.withOpacity(0.17);
+
+    return Positioned(
+      left: columnCenter - size / 2,
+      top: top,
+      width: size,
+      height: size,
+      child: IgnorePointer(
+        child: Icon(
+          logo.icon,
+          size: size,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingLogoData {
+  final IconData icon;
+  final int column;
+  final double phase;
+  final int direction;
+
+  const _FloatingLogoData(
+    this.icon, {
+    required this.column,
+    required this.phase,
+    required this.direction,
+  });
 }
 
 class _GlowCircle extends StatelessWidget {
