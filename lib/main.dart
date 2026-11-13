@@ -1,7 +1,14 @@
 import 'dart:math' as math;
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:js' as js;
+import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/material.dart';
 import 'package:simple_icons/simple_icons.dart';
+import 'package:flutter/services.dart';
+
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 void main() => runApp(const PortfolioApp());
@@ -1136,83 +1143,439 @@ class _ContactPanel extends StatefulWidget {
 }
 
 class _ContactPanelState extends State<_ContactPanel> {
+  int? _captchaWidgetId;
+  late final String _recaptchaViewType;
+  String? _captchaMessage;
+  String? _formNotice;
+  bool _formNoticeSuccess = false;
+
+  static const String _recaptchaSiteKey =
+      '6LcWAx8uAAAAADayGT-5winXS8PHT7h5ZuvYYKG-';
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Регистрируем HTML-поле Google reCAPTCHA как Flutter Web platform view.
+    // У каждого экземпляра формы собственный viewType.
+    _recaptchaViewType = 'portfolio-recaptcha-${identityHashCode(this)}';
+    ui_web.platformViewRegistry.registerViewFactory(
+      _recaptchaViewType,
+      (int viewId) {
+        final element = html.DivElement()
+          ..style.width = '304px'
+          ..style.height = '78px';
+
+        void showCaptchaMessage(String message) {
+          if (!mounted) return;
+          setState(() => _captchaMessage = message);
+        }
+
+        void renderCaptcha() {
+          if (!mounted || _captchaWidgetId != null) return;
+
+          final grecaptchaValue = js.context['grecaptcha'];
+          if (grecaptchaValue == null) {
+            showCaptchaMessage(
+              'Не удалось загрузить Google reCAPTCHA. Обнови страницу.',
+            );
+            return;
+          }
+
+          try {
+            final grecaptcha = grecaptchaValue as js.JsObject;
+            final options = js.JsObject.jsify({
+              'sitekey': _recaptchaSiteKey,
+              'theme': 'light',
+              'callback': js.allowInterop((dynamic token) {
+                if (!mounted) return;
+                setState(() => _captchaMessage = null);
+              }),
+              'expired-callback': js.allowInterop(() {
+                showCaptchaMessage(
+                  'Проверка истекла. Поставь галочку ещё раз.',
+                );
+              }),
+              'error-callback': js.allowInterop(() {
+                showCaptchaMessage(
+                  'Ошибка загрузки CAPTCHA. Проверь подключение к интернету.',
+                );
+              }),
+            });
+
+            final id = grecaptcha.callMethod('render', [element, options]);
+            _captchaWidgetId = (id as num).toInt();
+            if (mounted) {
+              setState(() => _captchaMessage = null);
+            }
+          } catch (_) {
+            showCaptchaMessage(
+              'Не удалось отобразить CAPTCHA. Обнови страницу.',
+            );
+          }
+        }
+
+        // Даём Flutter завершить добавление HTML-элемента в DOM
+        // до вызова grecaptcha.render().
+        final existingGrecaptcha = js.context['grecaptcha'];
+        if (existingGrecaptcha != null) {
+          Future<void>.delayed(Duration.zero, renderCaptcha);
+        } else {
+          final script = html.ScriptElement()
+            ..src =
+                'https://www.google.com/recaptcha/api.js?render=explicit&hl=ru'
+            ..setAttribute('async', '')
+            ..setAttribute('defer', '');
+          script.onLoad.listen((_) {
+            Future<void>.delayed(Duration.zero, renderCaptcha);
+          });
+          script.onError.listen((_) {
+            showCaptchaMessage(
+              'Google reCAPTCHA недоступна. Проверь подключение к интернету.',
+            );
+          });
+          html.document.head!.append(script);
+        }
+
+        return element;
+      },
+    );
+  }
+
+  String? _getCaptchaToken() {
+    try {
+      final grecaptchaValue = js.context['grecaptcha'];
+      if (grecaptchaValue == null || _captchaWidgetId == null) return null;
+
+      final grecaptcha = grecaptchaValue as js.JsObject;
+      final token = grecaptcha.callMethod('getResponse', [_captchaWidgetId]);
+
+      if (token == null || token.toString().isEmpty) return null;
+      return token.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _resetCaptcha() {
+    try {
+      final grecaptchaValue = js.context['grecaptcha'];
+      if (grecaptchaValue != null && _captchaWidgetId != null) {
+        (grecaptchaValue as js.JsObject)
+            .callMethod('reset', [_captchaWidgetId]);
+      }
+    } catch (_) {
+      // Не мешаем очистке формы, если CAPTCHA ещё не инициализирована.
+    }
+  }
+
+  // Заполни эти значения из EmailJS Dashboard.
+  static const String _serviceId = 'service_qcxsvzs';
+  static const String _templateId = 'template_muxr50w';
+  static const String _publicKey = 'LO_CbWC893lIBnhal';
+
+  static const String _emailJsEndpoint =
+      'https://api.emailjs.com/api/v1.0/email/send';
+
+  final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _message = TextEditingController();
+  final _website = TextEditingController(); // Honeypot против простых ботов.
+
+  bool _isSending = false;
+  DateTime? _lastSuccessfulSend;
 
   @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _message.dispose();
+    _website.dispose();
     super.dispose();
   }
 
+  String? _validateName(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return 'Укажи своё имя.';
+    if (text.length > 30) return 'Имя должно содержать не более 30 символов.';
+    if (text.runes.any((r) => r < 32 && r != 9)) {
+      return 'Имя содержит недопустимые символы.';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return 'Укажи адрес электронной почты.';
+    if (text.length > 254) return 'Слишком длинный адрес электронной почты.';
+    final emailPattern = RegExp(
+      r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+    );
+    if (!emailPattern.hasMatch(text)) {
+      return 'Введи корректный адрес, например name@example.com.';
+    }
+    return null;
+  }
+
+  String? _validateMessage(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return 'Напиши сообщение.';
+    if (text.length < 10)
+      return 'Сообщение должно содержать минимум 10 символов.';
+    if (text.length > 2000)
+      return 'Сообщение не должно превышать 2000 символов.';
+    return null;
+  }
+
+  void _showNotice(String message, {bool success = false}) {
+    if (!mounted) return;
+    setState(() {
+      _formNotice = message;
+      _formNoticeSuccess = success;
+    });
+  }
+
   Future<void> _send() async {
-    final name = _name.text.trim();
-    final email = _email.text.trim();
-    final message = _message.text.trim();
-    if (name.isEmpty || email.isEmpty || message.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Заполни все поля формы.')),
-      );
+    if (_isSending) return;
+    FocusScope.of(context).unfocus();
+
+    if (!_formKey.currentState!.validate()) return;
+
+    // Поле-ловушка: обычные посетители его не видят и не заполняют.
+    // Если бот его заполнил, ничего не отправляем.
+    if (_website.text.trim().isNotEmpty) return;
+
+    final lastSent = _lastSuccessfulSend;
+    if (lastSent != null &&
+        DateTime.now().difference(lastSent) < const Duration(seconds: 30)) {
+      _showNotice('Подожди немного перед следующей отправкой.');
       return;
     }
-    final uri = Uri(
-      scheme: 'mailto',
-      path: '',
-      queryParameters: {
-        'subject': 'Portfolio contact from $name',
-        'body': 'Name: $name\nEmail: $email\n\n$message',
-      },
-    );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Не удалось открыть почтовое приложение.'),
-        ),
-      );
+
+    if (_serviceId == 'YOUR_SERVICE_ID' ||
+        _templateId == 'YOUR_TEMPLATE_ID' ||
+        _publicKey == 'YOUR_PUBLIC_KEY') {
+      _showNotice(
+          'Сначала настрой EmailJS: Service ID, Template ID и Public Key.');
+      return;
+    }
+
+    final captchaToken = _getCaptchaToken();
+    if (captchaToken == null) {
+      setState(() {
+        _captchaMessage =
+            'Сначала отметь «Я не робот» и дождись подтверждения Google.';
+        _formNotice = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSending = true;
+      _formNotice = null;
+      _captchaMessage = null;
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(_emailJsEndpoint),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'service_id': _serviceId,
+              'template_id': _templateId,
+              'user_id': _publicKey,
+              'template_params': {
+                'from_name': _name.text.trim(),
+                'reply_to': _email.text.trim(),
+                'message': _message.text.trim(),
+                'g-recaptcha-response': captchaToken,
+              },
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        _lastSuccessfulSend = DateTime.now();
+        _formKey.currentState!.reset();
+        _name.clear();
+        _email.clear();
+        _message.clear();
+        _showNotice('Сообщение отправлено! Спасибо за обращение.',
+            success: true);
+      } else {
+        _showNotice(
+          'EmailJS не принял сообщение (код ${response.statusCode}). '
+          'Проверь настройки шаблона и Secret Key.',
+        );
+      }
+    } catch (_) {
+      _showNotice('Ошибка соединения. Проверь интернет и попробуй снова.');
+    } finally {
+      _resetCaptcha();
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+          _captchaMessage = null;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Contact me',
-            style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 22),
-        _ContactField(controller: _name, hint: 'Your name'),
-        const SizedBox(height: 11),
-        _ContactField(controller: _email, hint: 'Your email'),
-        const SizedBox(height: 11),
-        Expanded(
-          child: _ContactField(
-            controller: _message,
-            hint: 'Your message',
-            expands: true,
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Contact me',
+              style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 22),
+          _ContactField(
+            controller: _name,
+            hint: 'Your name',
+            validator: _validateName,
+            maxLength: 30,
+            inputFormatters: [LengthLimitingTextInputFormatter(30)],
+            textCapitalization: TextCapitalization.words,
           ),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: _send,
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF5D83FF),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24)),
+          const SizedBox(height: 11),
+          _ContactField(
+            controller: _email,
+            hint: 'Your email',
+            validator: _validateEmail,
+            maxLength: 254,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 11),
+          Expanded(
+            child: _ContactField(
+              controller: _message,
+              hint: 'Your message',
+              expands: true,
+              validator: _validateMessage,
+              maxLength: 2000,
+              keyboardType: TextInputType.multiline,
             ),
-            child: const Text('Send',
-                style: TextStyle(fontWeight: FontWeight.w700)),
           ),
-        ),
-      ],
+          // Honeypot скрыт от посетителей, но оставлен в дереве виджетов.
+          Offstage(
+            offstage: true,
+            child: TextField(
+              controller: _website,
+              keyboardType: TextInputType.url,
+              decoration: const InputDecoration(labelText: 'Website'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              height: 78,
+              child: HtmlElementView(
+                viewType: _recaptchaViewType,
+              ),
+            ),
+          ),
+          if (_captchaMessage != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              _captchaMessage!,
+              style: const TextStyle(
+                color: Color(0xFFE57373),
+                fontSize: 11,
+                height: 1.3,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _isSending ? null : _send,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF5D83FF),
+                disabledBackgroundColor:
+                    const Color(0xFF5D83FF).withOpacity(0.55),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24)),
+              ),
+              child: _isSending
+                  ? const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 17,
+                          height: 17,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Text('Sending...'),
+                      ],
+                    )
+                  : const Text('Send',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
+          if (_formNotice != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: _formNoticeSuccess
+                    ? const Color(0xFF23865A).withOpacity(0.14)
+                    : const Color(0xFFE57373).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _formNoticeSuccess
+                      ? const Color(0xFF23865A).withOpacity(0.45)
+                      : const Color(0xFFE57373).withOpacity(0.4),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    _formNoticeSuccess
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.error_outline_rounded,
+                    size: 17,
+                    color: _formNoticeSuccess
+                        ? const Color(0xFF36A875)
+                        : const Color(0xFFE57373),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _formNotice!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.35,
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? const Color(0xFF454B5A)
+                            : Colors.white70,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1221,24 +1584,41 @@ class _ContactField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final bool expands;
+  final String? Function(String?)? validator;
+  final int? maxLength;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
+
   const _ContactField({
     required this.controller,
     required this.hint,
     this.expands = false,
+    this.validator,
+    this.maxLength,
+    this.keyboardType,
+    this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
-  Widget build(BuildContext context) => TextField(
+  Widget build(BuildContext context) => TextFormField(
         controller: controller,
         expands: expands,
         minLines: expands ? null : 1,
         maxLines: expands ? null : 1,
+        maxLength: maxLength,
+        inputFormatters: inputFormatters,
+        validator: validator,
+        textCapitalization: textCapitalization,
         textAlignVertical: expands ? TextAlignVertical.top : null,
-        keyboardType: hint == 'Your email'
-            ? TextInputType.emailAddress
-            : TextInputType.text,
+        keyboardType: keyboardType ?? TextInputType.text,
+        style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: hint,
+          counterText: '',
+          errorMaxLines: 2,
+          errorStyle: const TextStyle(fontSize: 10, height: 1.15),
           filled: true,
           fillColor: Colors.white.withOpacity(0.045),
           contentPadding:
@@ -1254,6 +1634,14 @@ class _ContactField extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: Color(0xFF6F8FFF)),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFE57373)),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFFE57373)),
           ),
         ),
       );
