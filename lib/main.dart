@@ -1405,9 +1405,11 @@ class _ContactPanelState extends State<_ContactPanel> {
         _showNotice('Сообщение отправлено! Спасибо за обращение.',
             success: true);
       } else {
+        debugPrint('EmailJS status: ${response.statusCode}');
+        debugPrint('EmailJS response: ${response.body}');
+
         _showNotice(
-          'EmailJS не принял сообщение (код ${response.statusCode}). '
-          'Проверь настройки шаблона и Secret Key.',
+          'Ошибка EmailJS (${response.statusCode}): ${response.body}',
         );
       }
     } catch (_) {
