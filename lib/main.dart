@@ -80,6 +80,26 @@ const items = <PortfolioItem>[
     repositoryUrl: 'https://github.com/02493/weather-forecast-app',
   ),
   PortfolioItem(
+    'Folder Notes',
+    'Kotlin · Android',
+    Icons.note_alt_rounded,
+    Color(0xFF42A5F5),
+    'Android-приложение для создания и организации заметок. '
+        'Поддерживает папки и вложенную структуру, поиск, '
+        'автосохранение, корзину и резервное копирование.',
+    repositoryUrl: 'https://github.com/02493/note-app',
+  ),
+  PortfolioItem(
+    'User Data App',
+    'Kotlin · Android',
+    Icons.perm_device_information_rounded,
+    Color(0xFF26A69A),
+    'Android-приложение для работы с пользовательскими '
+        'данными и возможностями устройства. '
+        'Демонстрирует взаимодействие с системными функциями Android.',
+    repositoryUrl: 'https://github.com/02493/kotlin-userdata-app',
+  ),
+  PortfolioItem(
     'Ujin Hackathon',
     'Flutter · Team Project',
     Icons.hub_rounded,
