@@ -840,6 +840,7 @@ class _PhoneDock extends StatelessWidget {
               tooltip: 'Telegram',
               onTap: onTelegram,
               isLight: isLight,
+              tintAssetInDark: true,
             ),
             _DockIcon(
               icon: isLight ? Icons.dark_mode_rounded : Icons.wb_sunny_rounded,
@@ -854,6 +855,7 @@ class _PhoneDock extends StatelessWidget {
               tooltip: 'RuStore',
               onTap: onRuStore,
               isLight: isLight,
+              tintAssetInDark: true,
             ),
             _DockIcon(
               icon: Icons.play_arrow_rounded,
@@ -861,6 +863,7 @@ class _PhoneDock extends StatelessWidget {
               tooltip: 'Google Play',
               onTap: onPlayStore,
               isLight: isLight,
+              tintAssetInDark: true,
             ),
           ],
         ),
@@ -874,6 +877,7 @@ class _DockIcon extends StatelessWidget {
   final VoidCallback onTap;
   final bool isLight;
   final bool highlighted;
+  final bool tintAssetInDark;
 
   const _DockIcon({
     required this.icon,
@@ -882,6 +886,7 @@ class _DockIcon extends StatelessWidget {
     required this.isLight,
     this.assetPath,
     this.highlighted = false,
+    this.tintAssetInDark = true,
   });
 
   @override
@@ -908,6 +913,8 @@ class _DockIcon extends StatelessWidget {
                   child: Image.asset(
                     assetPath!,
                     fit: BoxFit.contain,
+                    color: !isLight && tintAssetInDark ? Colors.white : null,
+                    colorBlendMode: BlendMode.srcIn,
                     errorBuilder: (_, __, ___) => Icon(
                       icon,
                       size: 21,
