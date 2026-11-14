@@ -662,7 +662,7 @@ class _TechTile extends StatelessWidget {
       );
 }
 
-class _PhoneFrame extends StatelessWidget {
+class _PhoneFrame extends StatefulWidget {
   final ValueChanged<PortfolioItem> onOpen;
   final VoidCallback onGithub;
   final bool isLight;
@@ -676,7 +676,35 @@ class _PhoneFrame extends StatelessWidget {
   });
 
   @override
+  State<_PhoneFrame> createState() => _PhoneFrameState();
+}
+
+class _PhoneFrameState extends State<_PhoneFrame> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  List<PortfolioItem> get _filteredItems {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return items;
+
+    return items.where((item) {
+      return item.title.toLowerCase().contains(query) ||
+          item.subtitle.toLowerCase().contains(query) ||
+          item.description.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isLight = widget.isLight;
+    final filteredItems = _filteredItems;
+
     return Container(
       width: 330,
       height: 690,
@@ -711,32 +739,57 @@ class _PhoneFrame extends StatelessWidget {
                     const SizedBox(height: 4),
                     _PhoneStatusBar(isLight: isLight),
                     const SizedBox(height: 18),
-                    _SearchBar(isLight: isLight),
+                    _SearchBar(
+                      isLight: isLight,
+                      controller: _searchController,
+                      onChanged: (value) =>
+                          setState(() => _searchQuery = value),
+                      onClear: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    ),
                     const SizedBox(height: 14),
                     _NowPlayingCard(isLight: isLight),
                     const SizedBox(height: 18),
                     Expanded(
-                      child: GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: items.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 13,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 0.88,
-                        ),
-                        itemBuilder: (context, index) => _PhoneApp(
-                          item: items[index],
-                          onTap: () => onOpen(items[index]),
-                        ),
-                      ),
+                      child: filteredItems.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Ничего не найдено',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: isLight
+                                      ? const Color(0xFF707789)
+                                      : Colors.white54,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            )
+                          : GridView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: filteredItems.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                mainAxisSpacing: 13,
+                                crossAxisSpacing: 8,
+                                childAspectRatio: 0.88,
+                              ),
+                              itemBuilder: (context, index) {
+                                final item = filteredItems[index];
+                                return _PhoneApp(
+                                  item: item,
+                                  onTap: () => widget.onOpen(item),
+                                );
+                              },
+                            ),
                     ),
                     _PhoneDock(
                       isLight: isLight,
-                      onGithub: onGithub,
+                      onGithub: widget.onGithub,
                       onTelegram: () => _openExternal('https://t.me/tec9shi'),
-                      onToggleTheme: onToggleTheme,
+                      onToggleTheme: widget.onToggleTheme,
                       onRuStore: () => _openExternal('https://www.rustore.ru/'),
                       onPlayStore: () =>
                           _openExternal('https://play.google.com/store'),
@@ -805,7 +858,16 @@ class _PhoneStatusBar extends StatelessWidget {
 
 class _SearchBar extends StatelessWidget {
   final bool isLight;
-  const _SearchBar({required this.isLight});
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  const _SearchBar({
+    required this.isLight,
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
@@ -817,19 +879,42 @@ class _SearchBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.search_rounded,
-                color: isLight ? const Color(0xFF707789) : Colors.white60,
-                size: 19),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text('Search projects...',
-                  style: TextStyle(
-                      color: isLight ? const Color(0xFF707789) : Colors.white60,
-                      fontSize: 12)),
+            Icon(
+              Icons.search_rounded,
+              color: isLight ? const Color(0xFF707789) : Colors.white60,
+              size: 19,
             ),
-            Icon(Icons.mic_none_rounded,
-                color: isLight ? const Color(0xFF707789) : Colors.white60,
-                size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                onChanged: onChanged,
+                textInputAction: TextInputAction.search,
+                style: TextStyle(
+                  color: isLight ? const Color(0xFF252A36) : Colors.white,
+                  fontSize: 12,
+                ),
+                cursorColor: const Color(0xFF7778F6),
+                decoration: InputDecoration(
+                  hintText: 'Поиск приложений...',
+                  hintStyle: TextStyle(
+                    color: isLight ? const Color(0xFF707789) : Colors.white60,
+                    fontSize: 12,
+                  ),
+                  border: InputBorder.none,
+                  isCollapsed: true,
+                ),
+              ),
+            ),
+            if (controller.text.isNotEmpty)
+              GestureDetector(
+                onTap: onClear,
+                child: Icon(
+                  Icons.close_rounded,
+                  color: isLight ? const Color(0xFF707789) : Colors.white60,
+                  size: 17,
+                ),
+              ),
           ],
         ),
       );
