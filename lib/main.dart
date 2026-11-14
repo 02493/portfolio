@@ -422,36 +422,6 @@ class _AmbientBackgroundState extends State<_AmbientBackground>
                     ),
                   ),
                 ),
-                Positioned(
-                  left: -90,
-                  top: height * 0.18,
-                  child: _GlowCircle(
-                    size: 270,
-                    color: isLight
-                        ? const Color(0xFF91B8EE)
-                        : const Color(0xFF435A91),
-                  ),
-                ),
-                Positioned(
-                  right: -100,
-                  bottom: height * 0.10,
-                  child: _GlowCircle(
-                    size: 320,
-                    color: isLight
-                        ? const Color(0xFFB9A8E8)
-                        : const Color(0xFF55417F),
-                  ),
-                ),
-                Positioned(
-                  right: width * 0.28,
-                  top: -145,
-                  child: _GlowCircle(
-                    size: 270,
-                    color: isLight
-                        ? const Color(0xFFB4C8E8)
-                        : const Color(0xFF38466F),
-                  ),
-                ),
                 for (final logo in _logos)
                   _buildFloatingLogo(
                     logo,
