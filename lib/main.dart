@@ -721,7 +721,9 @@ class _PhoneFrameState extends State<_PhoneFrame> {
         ),
         borderRadius: BorderRadius.circular(43),
         border: Border.all(
-          color: isLight ? Colors.white.withOpacity(0.95) : Colors.white.withOpacity(0.32),
+          color: isLight
+              ? Colors.white.withOpacity(0.95)
+              : Colors.white.withOpacity(0.32),
           width: 2.2,
         ),
         boxShadow: [
@@ -753,7 +755,8 @@ class _PhoneFrameState extends State<_PhoneFrame> {
                     _SearchBar(
                       isLight: isLight,
                       controller: _searchController,
-                      onChanged: (value) => setState(() => _searchQuery = value),
+                      onChanged: (value) =>
+                          setState(() => _searchQuery = value),
                       onClear: () {
                         _searchController.clear();
                         setState(() => _searchQuery = '');
@@ -959,9 +962,7 @@ class _SearchBar extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Поиск приложений...',
                   hintStyle: TextStyle(
-                    color: isLight
-                        ? const Color(0xFF707789)
-                        : Colors.white60,
+                    color: isLight ? const Color(0xFF707789) : Colors.white60,
                     fontSize: 12,
                   ),
                   border: InputBorder.none,
@@ -1218,38 +1219,40 @@ class _DockIcon extends StatelessWidget {
           color: highlighted
               ? null
               : (isLight ? const Color(0xFFD0D3DC) : const Color(0xFF303341)),
-          borderRadius: BorderRadius.circular(15),
+          shape: BoxShape.circle,
         ),
-        child: IconButton(
-          onPressed: onTap,
-          padding: EdgeInsets.zero,
-          icon: assetPath != null
-              ? Padding(
-                  padding: const EdgeInsets.all(9),
-                  child: Image.asset(
-                    assetPath!,
-                    fit: BoxFit.contain,
-                    color: !isLight && tintAssetInDark ? Colors.white : null,
-                    colorBlendMode: BlendMode.srcIn,
-                    errorBuilder: (_, __, ___) => Icon(
-                      icon,
-                      size: 21,
-                      color: highlighted
-                          ? Colors.white
-                          : (isLight
-                              ? const Color(0xFF252936)
-                              : Colors.white70),
+        child: ClipOval(
+          child: IconButton(
+            onPressed: onTap,
+            padding: EdgeInsets.zero,
+            icon: assetPath != null
+                ? Padding(
+                    padding: const EdgeInsets.all(9),
+                    child: Image.asset(
+                      assetPath!,
+                      fit: BoxFit.contain,
+                      color: !isLight && tintAssetInDark ? Colors.white : null,
+                      colorBlendMode: BlendMode.srcIn,
+                      errorBuilder: (_, __, ___) => Icon(
+                        icon,
+                        size: 21,
+                        color: highlighted
+                            ? Colors.white
+                            : (isLight
+                                ? const Color(0xFF252936)
+                                : Colors.white70),
+                      ),
                     ),
+                  )
+                : Icon(
+                    icon,
+                    size: 21,
+                    color: highlighted
+                        ? Colors.white
+                        : (isLight ? const Color(0xFF252936) : Colors.white70),
                   ),
-                )
-              : Icon(
-                  icon,
-                  size: 21,
-                  color: highlighted
-                      ? Colors.white
-                      : (isLight ? const Color(0xFF252936) : Colors.white70),
-                ),
-          tooltip: tooltip,
+            tooltip: tooltip,
+          ),
         ),
       );
 }
@@ -1265,7 +1268,7 @@ class _AppIcon extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(size * 0.29),
+          shape: BoxShape.circle,
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -1370,7 +1373,8 @@ class _ContactPanelState extends State<_ContactPanel> {
           Future<void>.delayed(Duration.zero, renderCaptcha);
         } else {
           final script = html.ScriptElement()
-            ..src = 'https://www.google.com/recaptcha/api.js?render=explicit&hl=ru'
+            ..src =
+                'https://www.google.com/recaptcha/api.js?render=explicit&hl=ru'
             ..setAttribute('async', '')
             ..setAttribute('defer', '');
           script.onLoad.listen((_) {
