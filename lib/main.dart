@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:html' as html;
@@ -710,9 +711,19 @@ class _PhoneFrameState extends State<_PhoneFrame> {
       height: 690,
       padding: const EdgeInsets.all(7),
       decoration: BoxDecoration(
-        color: isLight ? const Color(0xFFE4E6ED) : const Color(0xFF090A0F),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isLight
+              ? const [Color(0xFFFFFFFF), Color(0xFFD8DCE7), Color(0xFFB8BFCE)]
+              : const [Color(0xFF626775), Color(0xFF171A22), Color(0xFF050609)],
+          stops: const [0.0, 0.42, 1.0],
+        ),
         borderRadius: BorderRadius.circular(43),
-        border: Border.all(color: const Color(0xFF777783), width: 2.5),
+        border: Border.all(
+          color: isLight ? Colors.white.withOpacity(0.95) : Colors.white.withOpacity(0.32),
+          width: 2.2,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF6D5DFB).withOpacity(0.20),
@@ -729,7 +740,7 @@ class _PhoneFrameState extends State<_PhoneFrame> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(35),
         child: Container(
-          color: isLight ? const Color(0xFFF0F1F5) : const Color(0xFF101116),
+          color: isLight ? Colors.white : Colors.black,
           child: Stack(
             children: [
               Padding(
@@ -742,8 +753,7 @@ class _PhoneFrameState extends State<_PhoneFrame> {
                     _SearchBar(
                       isLight: isLight,
                       controller: _searchController,
-                      onChanged: (value) =>
-                          setState(() => _searchQuery = value),
+                      onChanged: (value) => setState(() => _searchQuery = value),
                       onClear: () {
                         _searchController.clear();
                         setState(() => _searchQuery = '');
@@ -814,11 +824,22 @@ class _PhoneFrameState extends State<_PhoneFrame> {
                 right: 0,
                 child: Center(
                   child: Container(
-                    width: 82,
-                    height: 22,
+                    width: 13,
+                    height: 13,
                     decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(20),
+                      color: const Color(0xFF030407),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.22),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.45),
+                          blurRadius: 3,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -831,26 +852,66 @@ class _PhoneFrameState extends State<_PhoneFrame> {
   }
 }
 
-class _PhoneStatusBar extends StatelessWidget {
+class _PhoneStatusBar extends StatefulWidget {
   final bool isLight;
   const _PhoneStatusBar({required this.isLight});
 
   @override
+  State<_PhoneStatusBar> createState() => _PhoneStatusBarState();
+}
+
+class _PhoneStatusBarState extends State<_PhoneStatusBar> {
+  Timer? _clockTimer;
+  late String _currentTime;
+
+  String _formatTime() {
+    final now = DateTime.now();
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _currentTime = _formatTime();
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final updatedTime = _formatTime();
+      if (updatedTime != _currentTime && mounted) {
+        setState(() => _currentTime = updatedTime);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _clockTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final color = isLight ? const Color(0xFF252A36) : Colors.white;
+    final color = widget.isLight ? const Color(0xFF252A36) : Colors.white;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('9:41',
-            style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-        Row(children: [
-          Icon(Icons.signal_cellular_alt_rounded, size: 14, color: color),
-          const SizedBox(width: 5),
-          Icon(Icons.wifi_rounded, size: 14, color: color),
-          const SizedBox(width: 5),
-          Icon(Icons.battery_full_rounded, size: 16, color: color),
-        ]),
+        Text(
+          _currentTime,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+            color: color,
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.signal_cellular_alt_rounded, size: 15, color: color),
+            const SizedBox(width: 4),
+            Icon(Icons.wifi_rounded, size: 15, color: color),
+            const SizedBox(width: 4),
+            Icon(Icons.battery_full_rounded, size: 17, color: color),
+          ],
+        ),
       ],
     );
   }
@@ -898,7 +959,9 @@ class _SearchBar extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Поиск приложений...',
                   hintStyle: TextStyle(
-                    color: isLight ? const Color(0xFF707789) : Colors.white60,
+                    color: isLight
+                        ? const Color(0xFF707789)
+                        : Colors.white60,
                     fontSize: 12,
                   ),
                   border: InputBorder.none,
@@ -1307,8 +1370,7 @@ class _ContactPanelState extends State<_ContactPanel> {
           Future<void>.delayed(Duration.zero, renderCaptcha);
         } else {
           final script = html.ScriptElement()
-            ..src =
-                'https://www.google.com/recaptcha/api.js?render=explicit&hl=ru'
+            ..src = 'https://www.google.com/recaptcha/api.js?render=explicit&hl=ru'
             ..setAttribute('async', '')
             ..setAttribute('defer', '');
           script.onLoad.listen((_) {
