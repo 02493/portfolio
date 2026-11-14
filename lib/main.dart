@@ -954,103 +954,220 @@ class _SearchBar extends StatelessWidget {
       );
 }
 
-class _NowPlayingCard extends StatelessWidget {
+class _NowPlayingCard extends StatefulWidget {
   final bool isLight;
   const _NowPlayingCard({required this.isLight});
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(11),
-        decoration: BoxDecoration(
-          color: isLight ? Colors.white : const Color(0xFF202330),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: isLight
-                  ? const Color(0xFFD5D9E4)
-                  : Colors.white.withOpacity(0.06)),
+  State<_NowPlayingCard> createState() => _NowPlayingCardState();
+}
+
+class _NowPlayingCardState extends State<_NowPlayingCard> {
+  late final html.AudioElement _audio;
+  late final StreamSubscription<html.Event> _timeUpdateSubscription;
+  late final StreamSubscription<html.Event> _durationSubscription;
+  late final StreamSubscription<html.Event> _endedSubscription;
+  late final StreamSubscription<html.Event> _errorSubscription;
+
+  bool _isPlaying = false;
+  bool _hasError = false;
+  double _position = 0;
+  double _duration = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Файл должен лежать в web/sound/music.mp3.
+    // Папка web копируется во Flutter Web build без дополнительной настройки pubspec.yaml.
+    _audio = html.AudioElement()
+      ..src = 'sound/music.mp3'
+      ..preload = 'metadata';
+
+    _timeUpdateSubscription = _audio.onTimeUpdate.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _position =
+            _audio.currentTime.isFinite ? _audio.currentTime.toDouble() : 0.0;
+      });
+    });
+
+    _durationSubscription = _audio.onDurationChange.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _duration = _audio.duration.isFinite ? _audio.duration.toDouble() : 0.0;
+      });
+    });
+
+    _endedSubscription = _audio.onEnded.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = false;
+        _position = _duration;
+      });
+    });
+
+    _errorSubscription = _audio.onError.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _hasError = true;
+        _isPlaying = false;
+      });
+    });
+  }
+
+  Future<void> _togglePlayback() async {
+    if (_isPlaying) {
+      _audio.pause();
+      setState(() => _isPlaying = false);
+      return;
+    }
+
+    try {
+      await _audio.play();
+      if (mounted) {
+        setState(() {
+          _isPlaying = true;
+          _hasError = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _hasError = true);
+    }
+  }
+
+  String _formatTime(double seconds) {
+    if (!seconds.isFinite || seconds < 0) return '0:00';
+    final total = seconds.floor();
+    final minutes = total ~/ 60;
+    final remainingSeconds = total % 60;
+    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void dispose() {
+    _audio.pause();
+    _timeUpdateSubscription.cancel();
+    _durationSubscription.cancel();
+    _endedSubscription.cancel();
+    _errorSubscription.cancel();
+    _audio.src = '';
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLight = widget.isLight;
+    final progress = _duration > 0
+        ? (_position / _duration).clamp(0.0, 1.0).toDouble()
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: isLight ? Colors.white : const Color(0xFF202330),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isLight
+              ? const Color(0xFFD5D9E4)
+              : Colors.white.withOpacity(0.06),
         ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 43,
-                  height: 43,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF536B9D),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: const Icon(Icons.person_rounded, size: 27),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 43,
+                height: 43,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF536B9D),
+                  borderRadius: BorderRadius.circular(13),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('♫  NOW PLAYING',
-                          style: TextStyle(
-                              color: Color(0xFF8B91FF),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 3),
-                      Text('Andrey Tokarev',
-                          style: TextStyle(
-                              color: isLight
-                                  ? const Color(0xFF252A36)
-                                  : Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700)),
-                      Text('Portfolio · Digital space',
-                          style: TextStyle(
-                              color: isLight
-                                  ? const Color(0xFF72798A)
-                                  : Colors.white54,
-                              fontSize: 9)),
-                    ],
-                  ),
-                ),
-                Icon(Icons.skip_previous_rounded,
-                    color: isLight ? const Color(0xFF626A7B) : Colors.white70,
-                    size: 18),
-                const SizedBox(width: 4),
-                const Icon(Icons.pause_circle_filled_rounded,
-                    color: Color(0xFF8587FF), size: 31),
-                const SizedBox(width: 4),
-                Icon(Icons.skip_next_rounded,
-                    color: isLight ? const Color(0xFF626A7B) : Colors.white70,
-                    size: 18),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: 0.58,
-                minHeight: 3,
-                backgroundColor:
-                    isLight ? const Color(0xFFDDE1EA) : const Color(0xFF3B4056),
-                valueColor: const AlwaysStoppedAnimation(Color(0xFF8587FF)),
+                child: const Icon(Icons.person_rounded, size: 27),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('♫  NOW PLAYING',
+                        style: TextStyle(
+                            color: Color(0xFF8B91FF),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 3),
+                    Text('Andrey Tokarev',
+                        style: TextStyle(
+                            color: isLight
+                                ? const Color(0xFF252A36)
+                                : Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700)),
+                    Text('Portfolio · Digital space',
+                        style: TextStyle(
+                            color: isLight
+                                ? const Color(0xFF72798A)
+                                : Colors.white54,
+                            fontSize: 9)),
+                  ],
+                ),
+              ),
+              Icon(Icons.skip_previous_rounded,
+                  color: isLight ? const Color(0xFF626A7B) : Colors.white70,
+                  size: 18),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: _togglePlayback,
+                tooltip: _isPlaying ? 'Pause' : 'Play',
+                padding: EdgeInsets.zero,
+                constraints:
+                    const BoxConstraints.tightFor(width: 32, height: 32),
+                icon: Icon(
+                  _isPlaying
+                      ? Icons.pause_circle_filled_rounded
+                      : Icons.play_circle_filled_rounded,
+                  color: const Color(0xFF8587FF),
+                  size: 31,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.skip_next_rounded,
+                  color: isLight ? const Color(0xFF626A7B) : Colors.white70,
+                  size: 18),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 3,
+              backgroundColor:
+                  isLight ? const Color(0xFFDDE1EA) : const Color(0xFF3B4056),
+              valueColor: const AlwaysStoppedAnimation(Color(0xFF8587FF)),
             ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('0:58',
-                    style: TextStyle(
-                        color:
-                            isLight ? const Color(0xFF72798A) : Colors.white54,
-                        fontSize: 8)),
-                Text('2:40',
-                    style: TextStyle(
-                        color:
-                            isLight ? const Color(0xFF72798A) : Colors.white54,
-                        fontSize: 8)),
-              ],
-            ),
-          ],
-        ),
-      );
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_formatTime(_position),
+                  style: TextStyle(
+                      color: isLight ? const Color(0xFF72798A) : Colors.white54,
+                      fontSize: 8)),
+              Text(
+                _hasError ? 'Audio unavailable' : _formatTime(_duration),
+                style: TextStyle(
+                    color: isLight ? const Color(0xFF72798A) : Colors.white54,
+                    fontSize: 8),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PhoneApp extends StatelessWidget {
