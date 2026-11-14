@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:js' as js;
+import 'dart:ui' as ui;
 import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/material.dart';
@@ -44,7 +45,8 @@ class _PortfolioAppState extends State<PortfolioApp> {
       title: 'Andrey Tokarev | Portfolio',
       theme: ThemeData(
         brightness: brightness,
-        scaffoldBackgroundColor: _isLight ? const Color(0xFFEDEEF4) : ink,
+        scaffoldBackgroundColor:
+            _isLight ? const Color(0xFFF1F0F8) : const Color(0xFF171923),
         colorScheme: ColorScheme.fromSeed(
           seedColor: accent,
           brightness: brightness,
@@ -711,114 +713,169 @@ class _PhoneFrameState extends State<_PhoneFrame> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(35),
-        child: Container(
-          color: isLight ? Colors.white : Colors.black,
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(13, 13, 13, 12),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 4),
-                    _PhoneStatusBar(isLight: isLight),
-                    const SizedBox(height: 18),
-                    _SearchBar(
-                      isLight: isLight,
-                      controller: _searchController,
-                      onChanged: (value) =>
-                          setState(() => _searchQuery = value),
-                      onClear: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    _NowPlayingCard(isLight: isLight),
-                    const SizedBox(height: 18),
-                    Expanded(
-                      child: filteredItems.isEmpty
-                          ? Center(
-                              child: Text(
-                                'Ничего не найдено',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: isLight
-                                      ? const Color(0xFF707789)
-                                      : Colors.white54,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            )
-                          : GridView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: filteredItems.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
-                                mainAxisSpacing: 13,
-                                crossAxisSpacing: 8,
-                                childAspectRatio: 0.88,
-                              ),
-                              itemBuilder: (context, index) {
-                                final item = filteredItems[index];
-                                return _PhoneApp(
-                                  item: item,
-                                  onTap: () => widget.onOpen(item),
-                                );
-                              },
-                            ),
-                    ),
-                    _PhoneDock(
-                      isLight: isLight,
-                      onGithub: widget.onGithub,
-                      onTelegram: () => _openExternal('https://t.me/tec9shi'),
-                      onToggleTheme: widget.onToggleTheme,
-                      onRuStore: () => _openExternal('https://www.rustore.ru/'),
-                      onPlayStore: () =>
-                          _openExternal('https://play.google.com/store'),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      width: 92,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isLight
-                            ? Colors.black.withOpacity(0.35)
-                            : Colors.white.withOpacity(0.55),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                top: 5,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    width: 13,
-                    height: 13,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF030407),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.22),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.45),
-                          blurRadius: 3,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
+        child: Stack(
+          children: [
+            // Мягкий градиент вместо чистого белого/чёрного фона:
+            // цветные области за карточкой делают эффект стекла заметным.
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isLight
+                        ? const [
+                            Color(0xFFF8F8FC),
+                            Color(0xFFF0EFF8),
+                            Color(0xFFE9EDF7),
+                          ]
+                        : const [
+                            Color(0xFF20232E),
+                            Color(0xFF171923),
+                            Color(0xFF141720),
+                          ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            Positioned(
+              top: 92,
+              left: -55,
+              child: ImageFiltered(
+                imageFilter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                child: Container(
+                  width: 190,
+                  height: 190,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: (isLight
+                            ? const Color(0xFFB9C9F5)
+                            : const Color(0xFF5265C8))
+                        .withOpacity(isLight ? 0.52 : 0.32),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 145,
+              right: -65,
+              child: ImageFiltered(
+                imageFilter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                child: Container(
+                  width: 190,
+                  height: 190,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: (isLight
+                            ? const Color(0xFFD7C8F4)
+                            : const Color(0xFF8059C9))
+                        .withOpacity(isLight ? 0.48 : 0.30),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(13, 13, 13, 12),
+              child: Column(
+                children: [
+                  const SizedBox(height: 4),
+                  _PhoneStatusBar(isLight: isLight),
+                  const SizedBox(height: 18),
+                  _SearchBar(
+                    isLight: isLight,
+                    controller: _searchController,
+                    onChanged: (value) => setState(() => _searchQuery = value),
+                    onClear: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  _NowPlayingCard(isLight: isLight),
+                  const SizedBox(height: 18),
+                  Expanded(
+                    child: filteredItems.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Ничего не найдено',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: isLight
+                                    ? const Color(0xFF707789)
+                                    : Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
+                          )
+                        : GridView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: filteredItems.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              mainAxisSpacing: 13,
+                              crossAxisSpacing: 8,
+                              childAspectRatio: 0.88,
+                            ),
+                            itemBuilder: (context, index) {
+                              final item = filteredItems[index];
+                              return _PhoneApp(
+                                item: item,
+                                onTap: () => widget.onOpen(item),
+                              );
+                            },
+                          ),
+                  ),
+                  _PhoneDock(
+                    isLight: isLight,
+                    onGithub: widget.onGithub,
+                    onTelegram: () => _openExternal('https://t.me/tec9shi'),
+                    onToggleTheme: widget.onToggleTheme,
+                    onRuStore: () => _openExternal('https://www.rustore.ru/'),
+                    onPlayStore: () =>
+                        _openExternal('https://play.google.com/store'),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 92,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isLight
+                          ? Colors.black.withOpacity(0.35)
+                          : Colors.white.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 5,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  width: 13,
+                  height: 13,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF030407),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.22),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.45),
+                        blurRadius: 3,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1062,109 +1119,123 @@ class _NowPlayingCardState extends State<_NowPlayingCard> {
         ? (_position / _duration).clamp(0.0, 1.0).toDouble()
         : 0.0;
 
-    return Container(
-      padding: const EdgeInsets.all(11),
-      decoration: BoxDecoration(
-        color: isLight ? Colors.white : const Color(0xFF202330),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isLight
-              ? const Color(0xFFD5D9E4)
-              : Colors.white.withOpacity(0.06),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        child: Container(
+          padding: const EdgeInsets.all(11),
+          decoration: BoxDecoration(
+            color: isLight
+                ? Colors.white.withOpacity(0.10)
+                : const Color(0xFF343746).withOpacity(0.10),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isLight ? 0.04 : 0.12),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 43,
+                    height: 43,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF536B9D),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(Icons.person_rounded, size: 27),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('♫  NOW PLAYING',
+                            style: TextStyle(
+                                color: Color(0xFF8B91FF),
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 3),
+                        Text('Andrey Tokarev',
+                            style: TextStyle(
+                                color: isLight
+                                    ? const Color(0xFF252A36)
+                                    : Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700)),
+                        Text('Portfolio · Digital space',
+                            style: TextStyle(
+                                color: isLight
+                                    ? const Color(0xFF72798A)
+                                    : Colors.white54,
+                                fontSize: 9)),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.skip_previous_rounded,
+                      color: isLight ? const Color(0xFF626A7B) : Colors.white70,
+                      size: 18),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    onPressed: _togglePlayback,
+                    tooltip: _isPlaying ? 'Pause' : 'Play',
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 32, height: 32),
+                    icon: Icon(
+                      _isPlaying
+                          ? Icons.pause_circle_filled_rounded
+                          : Icons.play_circle_filled_rounded,
+                      color: const Color(0xFF8587FF),
+                      size: 31,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.skip_next_rounded,
+                      color: isLight ? const Color(0xFF626A7B) : Colors.white70,
+                      size: 18),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 3,
+                  backgroundColor: isLight
+                      ? const Color(0xFFDDE1EA)
+                      : const Color(0xFF3B4056),
+                  valueColor: const AlwaysStoppedAnimation(Color(0xFF8587FF)),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(_formatTime(_position),
+                      style: TextStyle(
+                          color: isLight
+                              ? const Color(0xFF72798A)
+                              : Colors.white54,
+                          fontSize: 8)),
+                  Text(
+                    _hasError ? 'Audio unavailable' : _formatTime(_duration),
+                    style: TextStyle(
+                        color:
+                            isLight ? const Color(0xFF72798A) : Colors.white54,
+                        fontSize: 8),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 43,
-                height: 43,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF536B9D),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: const Icon(Icons.person_rounded, size: 27),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('♫  NOW PLAYING',
-                        style: TextStyle(
-                            color: Color(0xFF8B91FF),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 3),
-                    Text('Andrey Tokarev',
-                        style: TextStyle(
-                            color: isLight
-                                ? const Color(0xFF252A36)
-                                : Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700)),
-                    Text('Portfolio · Digital space',
-                        style: TextStyle(
-                            color: isLight
-                                ? const Color(0xFF72798A)
-                                : Colors.white54,
-                            fontSize: 9)),
-                  ],
-                ),
-              ),
-              Icon(Icons.skip_previous_rounded,
-                  color: isLight ? const Color(0xFF626A7B) : Colors.white70,
-                  size: 18),
-              const SizedBox(width: 4),
-              IconButton(
-                onPressed: _togglePlayback,
-                tooltip: _isPlaying ? 'Pause' : 'Play',
-                padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints.tightFor(width: 32, height: 32),
-                icon: Icon(
-                  _isPlaying
-                      ? Icons.pause_circle_filled_rounded
-                      : Icons.play_circle_filled_rounded,
-                  color: const Color(0xFF8587FF),
-                  size: 31,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(Icons.skip_next_rounded,
-                  color: isLight ? const Color(0xFF626A7B) : Colors.white70,
-                  size: 18),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 3,
-              backgroundColor:
-                  isLight ? const Color(0xFFDDE1EA) : const Color(0xFF3B4056),
-              valueColor: const AlwaysStoppedAnimation(Color(0xFF8587FF)),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(_formatTime(_position),
-                  style: TextStyle(
-                      color: isLight ? const Color(0xFF72798A) : Colors.white54,
-                      fontSize: 8)),
-              Text(
-                _hasError ? 'Audio unavailable' : _formatTime(_duration),
-                style: TextStyle(
-                    color: isLight ? const Color(0xFF72798A) : Colors.white54,
-                    fontSize: 8),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
